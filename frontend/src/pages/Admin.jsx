@@ -1,11 +1,56 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { useAuth } from '../context/AuthContext';
+
+const BuscadorEquipo = ({ label, value, onChange, equipos }) => {
+    const [busqueda, setBusqueda] = useState('');
+    const [mostrar, setMostrar] = useState(false);
+
+    const equipoSeleccionado = equipos.find(e => e.id == value);
+    const filtrados = equipos.filter(e =>
+        e.nombre.toLowerCase().includes(busqueda.toLowerCase())
+    ).slice(0, 10);
+
+    return (
+        <div className="relative">
+            <div
+                className="bg-gray-800 px-4 py-2 rounded-lg cursor-pointer"
+                onClick={() => setMostrar(!mostrar)}
+            >
+                {equipoSeleccionado ? equipoSeleccionado.nombre : label}
+            </div>
+            {mostrar && (
+                <div className="absolute z-10 w-full bg-gray-800 rounded-lg mt-1 shadow-lg">
+                    <input
+                        type="text"
+                        placeholder="Buscar..."
+                        className="w-full bg-gray-700 px-4 py-2 rounded-t-lg outline-none"
+                        value={busqueda}
+                        onChange={e => setBusqueda(e.target.value)}
+                        autoFocus
+                    />
+                    {filtrados.map(eq => (
+                        <div
+                            key={eq.id}
+                            className="px-4 py-2 hover:bg-gray-700 cursor-pointer"
+                            onClick={() => {
+                                onChange(eq.id);
+                                setMostrar(false);
+                                setBusqueda('');
+                            }}
+                        >
+                            {eq.nombre}
+                        </div>
+                    ))}
+                    {filtrados.length === 0 && (
+                        <div className="px-4 py-2 text-gray-400">Sin resultados</div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
 
 const Admin = () => {
-    const { user } = useAuth();
-    const navigate = useNavigate();
     const [competiciones, setCompeticiones] = useState([]);
     const [equipos, setEquipos] = useState([]);
     const [tab, setTab] = useState('partido');
@@ -95,7 +140,6 @@ const Admin = () => {
                 {mensaje && <p className="text-green-400 mb-4">{mensaje}</p>}
                 {error && <p className="text-red-400 mb-4">{error}</p>}
 
-                {/* Tabs */}
                 <div className="flex gap-2 mb-6">
                     {['partido', 'equipo', 'competicion'].map(t => (
                         <button
@@ -108,33 +152,22 @@ const Admin = () => {
                     ))}
                 </div>
 
-                {/* Agregar Partido */}
                 {tab === 'partido' && (
                     <div className="bg-gray-900 rounded-xl p-6">
                         <h2 className="text-xl font-bold mb-4">Agregar Partido</h2>
                         <form onSubmit={handlePartido} className="flex flex-col gap-4">
-                            <select
-                                className="bg-gray-800 px-4 py-2 rounded-lg outline-none"
+                            <BuscadorEquipo
+                                label="Equipo local"
                                 value={formPartido.equipo_local_id}
-                                onChange={e => setFormPartido({ ...formPartido, equipo_local_id: e.target.value })}
-                                required
-                            >
-                                <option value="">Equipo local</option>
-                                {equipos.map(eq => (
-                                    <option key={eq.id} value={eq.id}>{eq.nombre}</option>
-                                ))}
-                            </select>
-                            <select
-                                className="bg-gray-800 px-4 py-2 rounded-lg outline-none"
+                                onChange={id => setFormPartido({ ...formPartido, equipo_local_id: id })}
+                                equipos={equipos}
+                            />
+                            <BuscadorEquipo
+                                label="Equipo visitante"
                                 value={formPartido.equipo_visitante_id}
-                                onChange={e => setFormPartido({ ...formPartido, equipo_visitante_id: e.target.value })}
-                                required
-                            >
-                                <option value="">Equipo visitante</option>
-                                {equipos.map(eq => (
-                                    <option key={eq.id} value={eq.id}>{eq.nombre}</option>
-                                ))}
-                            </select>
+                                onChange={id => setFormPartido({ ...formPartido, equipo_visitante_id: id })}
+                                equipos={equipos}
+                            />
                             <select
                                 className="bg-gray-800 px-4 py-2 rounded-lg outline-none"
                                 value={formPartido.competicion_id}
@@ -186,7 +219,6 @@ const Admin = () => {
                     </div>
                 )}
 
-                {/* Agregar Equipo */}
                 {tab === 'equipo' && (
                     <div className="bg-gray-900 rounded-xl p-6">
                         <h2 className="text-xl font-bold mb-4">Agregar Equipo</h2>
@@ -220,7 +252,6 @@ const Admin = () => {
                     </div>
                 )}
 
-                {/* Agregar Competicion */}
                 {tab === 'competicion' && (
                     <div className="bg-gray-900 rounded-xl p-6">
                         <h2 className="text-xl font-bold mb-4">Agregar Competición</h2>
