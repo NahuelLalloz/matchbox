@@ -12,7 +12,9 @@ const Home = () => {
     const [temporadaSeleccionada, setTemporadaSeleccionada] = useState(null);
     const [partidosComp, setPartidosComp] = useState([]);
     const [cargandoPartidos, setCargandoPartidos] = useState(false);
-    const [vista, setVista] = useState('explorar'); // 'buscar' o 'explorar'
+    const [vista, setVista] = useState('explorar');
+    const [mejores, setMejores] = useState([]);
+    const [cargandoMejores, setCargandoMejores] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -49,6 +51,17 @@ const Home = () => {
             console.error(err);
         } finally {
             setBuscando(false);
+        }
+    };
+
+    const cargarMejores = async () => {
+        if (mejores.length > 0) return;
+        setCargandoMejores(true);
+        try {
+            const res = await api.get('/partidos/mejores');
+            setMejores(res.data);
+        } finally {
+            setCargandoMejores(false);
         }
     };
 
@@ -89,18 +102,15 @@ const Home = () => {
 
                 {/* Tabs */}
                 <div className="flex gap-2 mb-6">
-                    <button
-                        onClick={() => setVista('explorar')}
-                        className={`px-4 py-2 rounded-lg font-semibold ${vista === 'explorar' ? 'bg-green-700' : 'bg-gray-800 hover:bg-gray-700'}`}
-                    >
-                        Explorar
-                    </button>
-                    <button
-                        onClick={() => setVista('buscar')}
-                        className={`px-4 py-2 rounded-lg font-semibold ${vista === 'buscar' ? 'bg-green-700' : 'bg-gray-800 hover:bg-gray-700'}`}
-                    >
-                        Buscar
-                    </button>
+                    {['explorar', 'buscar', 'mejores'].map(v => (
+                        <button
+                            key={v}
+                            onClick={() => { setVista(v); if (v === 'mejores') cargarMejores(); }}
+                            className={`px-4 py-2 rounded-lg font-semibold capitalize ${vista === v ? 'bg-green-700' : 'bg-gray-800 hover:bg-gray-700'}`}
+                        >
+                            {v === 'mejores' ? '⭐ Mejores' : v.charAt(0).toUpperCase() + v.slice(1)}
+                        </button>
+                    ))}
                 </div>
 
                 {/* Vista Buscar */}
@@ -136,8 +146,6 @@ const Home = () => {
                 {vista === 'explorar' && (
                     <>
                         <h1 className="text-3xl font-bold mb-6">Explorar competiciones</h1>
-
-                        {/* Competiciones */}
                         <div className="flex gap-3 flex-wrap mb-6">
                             {competiciones.map(comp => (
                                 <button
@@ -149,8 +157,6 @@ const Home = () => {
                                 </button>
                             ))}
                         </div>
-
-                        {/* Temporadas */}
                         {temporadas.length > 0 && (
                             <div className="flex gap-3 flex-wrap mb-6">
                                 {temporadas.map(t => (
@@ -164,19 +170,55 @@ const Home = () => {
                                 ))}
                             </div>
                         )}
-
-                        {/* Partidos */}
                         {cargandoPartidos && <p className="text-gray-400">Cargando partidos...</p>}
                         <div className="flex flex-col gap-4">
                             {partidosComp.map(partido => <PartidoCard key={partido.id} partido={partido} />)}
                         </div>
-
                         {!competicionSeleccionada && (
                             <p className="text-gray-500 text-center mt-10">Seleccioná una competición para ver los partidos</p>
                         )}
                         {competicionSeleccionada && temporadas.length > 0 && !temporadaSeleccionada && (
                             <p className="text-gray-500 text-center mt-10">Seleccioná una temporada</p>
                         )}
+                    </>
+                )}
+
+                {/* Vista Mejores */}
+                {vista === 'mejores' && (
+                    <>
+                        <h1 className="text-3xl font-bold mb-2">Mejores partidos</h1>
+                        <p className="text-gray-400 mb-6">Ordenados por calificación promedio</p>
+                        {cargandoMejores && <p className="text-gray-400">Cargando...</p>}
+                        <div className="flex flex-col gap-4">
+                            {mejores.map((partido, i) => (
+                                <div key={partido.id} className="relative">
+                                    <span className="absolute -left-6 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-bold">#{i+1}</span>
+                                    <div onClick={() => navigate(`/partido/${partido.id}`)} className="bg-gray-900 p-4 rounded-xl cursor-pointer hover:bg-gray-800 transition">
+                                        <div className="flex justify-between items-center">
+                                            <div className="flex items-center gap-3 flex-1">
+                                                {partido.escudo_local && <img src={partido.escudo_local} className="w-8 h-8 object-contain" />}
+                                                <span className="font-semibold text-sm">{partido.equipo_local}</span>
+                                            </div>
+                                            <div className="text-center px-4">
+                                                <span className="text-xl font-bold text-green-400">{partido.goles_local} - {partido.goles_visitante}</span>
+                                                <p className="text-gray-400 text-xs">{partido.competicion}</p>
+                                            </div>
+                                            <div className="flex items-center gap-3 flex-1 justify-end">
+                                                <span className="font-semibold text-sm">{partido.equipo_visitante}</span>
+                                                {partido.escudo_visitante && <img src={partido.escudo_visitante} className="w-8 h-8 object-contain" />}
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between mt-2">
+                                            <p className="text-gray-500 text-xs">{new Date(partido.fecha).toLocaleDateString('es-AR')}</p>
+                                            <p className="text-yellow-400 text-xs font-semibold">⭐ {partido.promedio} ({partido.total_resenas} reseñas)</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            {mejores.length === 0 && !cargandoMejores && (
+                                <p className="text-gray-500 text-center mt-10">Todavía no hay reseñas</p>
+                            )}
+                        </div>
                     </>
                 )}
 
