@@ -57,6 +57,11 @@ const Admin = () => {
     const [mensaje, setMensaje] = useState('');
     const [error, setError] = useState('');
 
+    // Eliminar partido
+    const [busquedaEliminar, setBusquedaEliminar] = useState('');
+    const [resultadosBusqueda, setResultadosBusqueda] = useState([]);
+    const [buscando, setBuscando] = useState(false);
+
     const [formCompeticion, setFormCompeticion] = useState({ nombre: '', pais: '' });
     const [formEquipo, setFormEquipo] = useState({ nombre: '', pais: '', escudo_url: '' });
     const [formPartido, setFormPartido] = useState({
@@ -132,6 +137,34 @@ const Admin = () => {
         }
     };
 
+    const buscarPartidosEliminar = async () => {
+        if (!busquedaEliminar.trim()) return;
+        setBuscando(true);
+        try {
+            const res = await api.get(`/partidos/buscar?q=${busquedaEliminar}`);
+            setResultadosBusqueda(res.data);
+        } catch (err) {
+            setError('Error buscando partidos');
+        }
+        setBuscando(false);
+    };
+
+    const eliminarPartido = async (id) => {
+        if (!window.confirm('¿Seguro que querés eliminar este partido?')) return;
+        setMensaje(''); setError('');
+        try {
+            await api.delete(`/admin/partidos/${id}`);
+            setMensaje('Partido eliminado');
+            setResultadosBusqueda(prev => prev.filter(p => p.id !== id));
+        } catch (err) {
+            setError(err.response?.data?.error || 'Error al eliminar');
+        }
+    };
+
+    const formatFecha = (fecha) => {
+        return new Date(fecha).toLocaleDateString('es-AR');
+    };
+
     return (
         <div className="min-h-screen bg-gray-950 text-white p-6">
             <div className="max-w-2xl mx-auto">
@@ -140,14 +173,14 @@ const Admin = () => {
                 {mensaje && <p className="text-green-400 mb-4">{mensaje}</p>}
                 {error && <p className="text-red-400 mb-4">{error}</p>}
 
-                <div className="flex gap-2 mb-6">
-                    {['partido', 'equipo', 'competicion'].map(t => (
+                <div className="flex gap-2 mb-6 flex-wrap">
+                    {['partido', 'equipo', 'competicion', 'eliminar'].map(t => (
                         <button
                             key={t}
                             onClick={() => setTab(t)}
                             className={`px-4 py-2 rounded-lg font-semibold capitalize ${tab === t ? 'bg-green-700' : 'bg-gray-800 hover:bg-gray-700'}`}
                         >
-                            {t}
+                            {t === 'eliminar' ? 'Eliminar partido' : t}
                         </button>
                     ))}
                 </div>
@@ -275,6 +308,47 @@ const Admin = () => {
                                 Guardar competición
                             </button>
                         </form>
+                    </div>
+                )}
+
+                {tab === 'eliminar' && (
+                    <div className="bg-gray-900 rounded-xl p-6">
+                        <h2 className="text-xl font-bold mb-4">Eliminar Partido</h2>
+                        <div className="flex gap-2 mb-4">
+                            <input
+                                type="text"
+                                placeholder="Buscar por equipo..."
+                                className="flex-1 bg-gray-800 px-4 py-2 rounded-lg outline-none"
+                                value={busquedaEliminar}
+                                onChange={e => setBusquedaEliminar(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && buscarPartidosEliminar()}
+                            />
+                            <button
+                                onClick={buscarPartidosEliminar}
+                                className="bg-green-700 hover:bg-green-600 px-4 py-2 rounded-lg font-semibold"
+                            >
+                                {buscando ? '...' : 'Buscar'}
+                            </button>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            {resultadosBusqueda.map(p => (
+                                <div key={p.id} className="flex justify-between items-center bg-gray-800 px-4 py-3 rounded-lg">
+                                    <div>
+                                        <span className="font-semibold">{p.equipo_local} {p.goles_local} - {p.goles_visitante} {p.equipo_visitante}</span>
+                                        <span className="text-gray-400 text-sm ml-2">{formatFecha(p.fecha)} · {p.competicion}</span>
+                                    </div>
+                                    <button
+                                        onClick={() => eliminarPartido(p.id)}
+                                        className="bg-red-700 hover:bg-red-600 px-3 py-1 rounded-lg text-sm font-semibold ml-2"
+                                    >
+                                        Eliminar
+                                    </button>
+                                </div>
+                            ))}
+                            {resultadosBusqueda.length === 0 && busquedaEliminar && !buscando && (
+                                <p className="text-gray-400">Sin resultados</p>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>

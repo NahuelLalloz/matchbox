@@ -61,7 +61,19 @@ router.get('/equipos', auth, isAdmin, async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+// Eliminar partido
+router.delete('/partidos/:id', auth, isAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.query('DELETE FROM logs WHERE partido_id = $1', [id]);
+        await pool.query('DELETE FROM partidos WHERE id = $1', [id]);
+        res.json({ mensaje: 'Partido eliminado' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
+module.exports = router;
 // Obtener todas las competiciones
 router.get('/competiciones', auth, isAdmin, async (req, res) => {
     try {
