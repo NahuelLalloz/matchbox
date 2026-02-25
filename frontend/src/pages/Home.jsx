@@ -15,6 +15,9 @@ const Home = () => {
     const [vista, setVista] = useState('explorar');
     const [mejores, setMejores] = useState([]);
     const [cargandoMejores, setCargandoMejores] = useState(false);
+    const [busquedaUsuario, setBusquedaUsuario] = useState('');
+    const [usuarios, setUsuarios] = useState([]);
+    const [buscandoUsuario, setBuscandoUsuario] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -51,6 +54,20 @@ const Home = () => {
             console.error(err);
         } finally {
             setBuscando(false);
+        }
+    };
+
+    const buscarUsuarios = async (e) => {
+        e.preventDefault();
+        if (!busquedaUsuario.trim()) return;
+        setBuscandoUsuario(true);
+        try {
+            const res = await api.get(`/usuarios/buscar?q=${busquedaUsuario}`);
+            setUsuarios(res.data);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setBuscandoUsuario(false);
         }
     };
 
@@ -101,8 +118,8 @@ const Home = () => {
             <div className="max-w-2xl mx-auto">
 
                 {/* Tabs */}
-                <div className="flex gap-2 mb-6">
-                    {['explorar', 'buscar', 'mejores'].map(v => (
+                <div className="flex gap-2 mb-6 flex-wrap">
+                    {['explorar', 'buscar', 'mejores', 'gente'].map(v => (
                         <button
                             key={v}
                             onClick={() => { setVista(v); if (v === 'mejores') cargarMejores(); }}
@@ -217,6 +234,49 @@ const Home = () => {
                             ))}
                             {mejores.length === 0 && !cargandoMejores && (
                                 <p className="text-gray-500 text-center mt-10">Todavía no hay reseñas</p>
+                            )}
+                        </div>
+                    </>
+                )}
+
+                {/* Vista Gente */}
+                {vista === 'gente' && (
+                    <>
+                        <h1 className="text-3xl font-bold mb-2">Buscar gente</h1>
+                        <p className="text-gray-400 mb-6">Buscá por nombre de usuario</p>
+                        <form onSubmit={buscarUsuarios} className="flex gap-2 mb-8">
+                            <input
+                                type="text"
+                                placeholder="Ej: Lali, Juan..."
+                                className="flex-1 bg-gray-800 px-4 py-2 rounded-lg outline-none focus:ring-2 focus:ring-green-500"
+                                value={busquedaUsuario}
+                                onChange={e => setBusquedaUsuario(e.target.value)}
+                            />
+                            <button
+                                type="submit"
+                                className="bg-green-700 hover:bg-green-600 px-6 py-2 rounded-lg font-semibold"
+                            >
+                                {buscandoUsuario ? 'Buscando...' : 'Buscar'}
+                            </button>
+                        </form>
+                        <div className="flex flex-col gap-3">
+                            {usuarios.map(u => (
+                                <div
+                                    key={u.id}
+                                    onClick={() => navigate(`/perfil/${u.username}`)}
+                                    className="bg-gray-900 p-4 rounded-xl cursor-pointer hover:bg-gray-800 transition flex items-center gap-4"
+                                >
+                                    <div className="w-10 h-10 rounded-full bg-green-700 flex items-center justify-center font-bold text-lg">
+                                        {u.username[0].toUpperCase()}
+                                    </div>
+                                    <span className="font-semibold">{u.username}</span>
+                                </div>
+                            ))}
+                            {usuarios.length === 0 && !buscandoUsuario && busquedaUsuario && (
+                                <p className="text-gray-500 text-center mt-10">Sin resultados</p>
+                            )}
+                            {!busquedaUsuario && (
+                                <p className="text-gray-500 text-center mt-10">Buscá un usuario para empezar</p>
                             )}
                         </div>
                     </>
