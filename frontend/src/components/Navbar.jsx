@@ -9,12 +9,16 @@ const Navbar = () => {
             <Link to="/" className="text-2xl font-bold tracking-tight">
                 ⚽ Matchboxd
             </Link>
-            <div className="flex gap-4 items-center">
-                {user ? (
-                    <>
-                        <Link to={`/perfil/${user.username}`} className="hover:text-green-300">
-                            {user.username}
-                        </Link>
+      <div className="flex gap-4 items-center">
+    {user ? (
+        <>
+            <Link to={`/perfil/${user.username}`} className="hover:text-green-300">
+                {user.username}
+            </Link>
+            {user?.es_admin && (
+                <Link to="/admin" className="hover:text-green-300">Admin</Link>
+            )}
+                        
                         <button
                             onClick={logout}
                             className="bg-green-700 hover:bg-green-600 px-3 py-1 rounded"

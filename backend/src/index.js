@@ -6,6 +6,7 @@ const authRoutes = require('./routes/auth');
 const partidosRoutes = require('./routes/partidos');
 const usuariosRoutes = require('./routes/usuarios');
 const competicionesRoutes = require('./routes/competiciones');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 app.use(cors());
@@ -15,6 +16,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/partidos', partidosRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/competiciones', competicionesRoutes);
+app.use('/api/admin', adminRoutes);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
