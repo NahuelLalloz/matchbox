@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
-
+import { useParams, Link } from 'react-router-dom';
 const Partido = () => {
     const { id } = useParams();
     const { user } = useAuth();
@@ -131,7 +131,7 @@ const Partido = () => {
                         {reseñas.map(r => (
                             <div key={r.id} className="bg-gray-900 rounded-xl p-4">
                                 <div className="flex justify-between items-center mb-2">
-                                    <span className="font-semibold text-green-400">{r.username}</span>
+                                    <Link to={`/perfil/${r.username}`} className="font-semibold text-green-400 hover:underline">{r.username}</Link>
                                     <span className="text-yellow-400">{'⭐'.repeat(Math.round(r.calificacion))} {r.calificacion}</span>
                                 </div>
                                 {r.reseña && <p className="text-gray-300">{r.reseña}</p>}
