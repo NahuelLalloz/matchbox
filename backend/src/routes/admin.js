@@ -44,7 +44,7 @@ router.post('/partidos', auth, isAdmin, async (req, res) => {
         const result = await pool.query(
             `INSERT INTO partidos (equipo_local_id, equipo_visitante_id, competicion_id, goles_local, goles_visitante, fecha, temporada)
              VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-            [equipo_local_id, equipo_visitante_id, competicion_id, goles_local, goles_visitante, fecha, temporada]
+            [equipo_local_id, equipo_visitante_id, competicion_id, goles_local, goles_visitante, fecha + 'T12:00:00', temporada]
         );
         res.status(201).json(result.rows[0]);
     } catch (err) {
