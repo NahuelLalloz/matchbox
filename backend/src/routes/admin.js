@@ -9,7 +9,6 @@ const isAdmin = async (req, res, next) => {
     next();
 };
 
-// Agregar competicion
 router.post('/competiciones', auth, isAdmin, async (req, res) => {
     const { nombre, pais } = req.body;
     try {
@@ -23,7 +22,6 @@ router.post('/competiciones', auth, isAdmin, async (req, res) => {
     }
 });
 
-// Agregar equipo
 router.post('/equipos', auth, isAdmin, async (req, res) => {
     const { nombre, pais, escudo_url } = req.body;
     try {
@@ -37,7 +35,6 @@ router.post('/equipos', auth, isAdmin, async (req, res) => {
     }
 });
 
-// Agregar partido
 router.post('/partidos', auth, isAdmin, async (req, res) => {
     const { equipo_local_id, equipo_visitante_id, competicion_id, goles_local, goles_visitante, fecha, temporada } = req.body;
     try {
@@ -52,7 +49,6 @@ router.post('/partidos', auth, isAdmin, async (req, res) => {
     }
 });
 
-// Obtener todos los equipos
 router.get('/equipos', auth, isAdmin, async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM equipos ORDER BY nombre');
@@ -61,20 +57,7 @@ router.get('/equipos', auth, isAdmin, async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-// Eliminar partido
-router.delete('/partidos/:id', auth, isAdmin, async (req, res) => {
-    const { id } = req.params;
-    try {
-        await pool.query('DELETE FROM logs WHERE partido_id = $1', [id]);
-        await pool.query('DELETE FROM partidos WHERE id = $1', [id]);
-        res.json({ mensaje: 'Partido eliminado' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
 
-module.exports = router;
-// Obtener todas las competiciones
 router.get('/competiciones', auth, isAdmin, async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM competiciones ORDER BY nombre');
@@ -82,7 +65,9 @@ router.get('/competiciones', auth, isAdmin, async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
-    router.delete('/partidos/:id', auth, isAdmin, async (req, res) => {
+});
+
+router.delete('/partidos/:id', auth, isAdmin, async (req, res) => {
     const { id } = req.params;
     try {
         await pool.query('DELETE FROM logs WHERE partido_id = $1', [id]);
@@ -94,7 +79,6 @@ router.get('/competiciones', auth, isAdmin, async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
-});
 });
 
 module.exports = router;
