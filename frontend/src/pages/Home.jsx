@@ -547,7 +547,7 @@ const Home = () => {
                     {/* Hero */}
                     <div className="hero">
                         <div className="hero-titulo">Match<span>boxd</span></div>
-                        <div className="hero-sub">El diario de tus partidos</div>
+                        
                     </div>
 
                     {/* Tabs */}
