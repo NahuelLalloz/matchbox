@@ -15,7 +15,7 @@ const Navbar = () => {
             <Link to={`/perfil/${user.username}`} className="hover:text-green-300">
                 {user.username}
             </Link>
-            {user?.es_admin && (
+            {(user?.es_admin === true || user?.es_admin === 'true') && (
                 <Link to="/admin" className="hover:text-green-300">Admin</Link>
             )}
                         
