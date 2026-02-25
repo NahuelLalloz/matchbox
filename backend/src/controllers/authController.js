@@ -41,7 +41,7 @@ const login = async (req, res) => {
             return res.status(400).json({ error: 'Email o contraseña incorrectos' });
         }
         const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-        res.json({ user: { id: user.id, username: user.username, email: user.email, es_admin: user.es_admin }, token });
+        res.json({ user: { id: user.id, username: user.username, email: user.email, es_admin: user.es_admin }, token })
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
