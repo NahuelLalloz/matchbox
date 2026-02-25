@@ -82,208 +82,614 @@ const Home = () => {
         }
     };
 
-    const PartidoCard = ({ partido }) => (
+    const PartidoCard = ({ partido, rank }) => (
         <div
             onClick={() => navigate(`/partido/${partido.id}`)}
-            className="bg-gray-900 p-4 rounded-xl cursor-pointer hover:bg-gray-800 transition"
+            className="partido-card group cursor-pointer"
         >
-            <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3 flex-1">
-                    {partido.escudo_local && (
-                        <img src={partido.escudo_local} className="w-8 h-8 object-contain" />
-                    )}
-                    <span className="font-semibold text-sm">{partido.equipo_local}</span>
+            {rank && <span className="rank-badge">#{rank}</span>}
+            <div className="partido-inner">
+                <div className="equipo-side">
+                    {partido.escudo_local
+                        ? <img src={partido.escudo_local} className="escudo" alt="" />
+                        : <div className="escudo-placeholder">{partido.equipo_local?.[0]}</div>
+                    }
+                    <span className="equipo-nombre">{partido.equipo_local}</span>
                 </div>
-                <div className="text-center px-4">
-                    <span className="text-xl font-bold text-green-400">
-                        {partido.goles_local} - {partido.goles_visitante}
-                    </span>
-                    <p className="text-gray-400 text-xs">{partido.competicion}</p>
-                </div>
-                <div className="flex items-center gap-3 flex-1 justify-end">
-                    <span className="font-semibold text-sm">{partido.equipo_visitante}</span>
-                    {partido.escudo_visitante && (
-                        <img src={partido.escudo_visitante} className="w-8 h-8 object-contain" />
+                <div className="marcador-centro">
+                    <div className="marcador-score">
+                        {partido.goles_local} <span className="guion">—</span> {partido.goles_visitante}
+                    </div>
+                    <div className="marcador-meta">
+                        <span className="competicion-tag">{partido.competicion}</span>
+                        <span className="fecha-tag">{new Date(partido.fecha).toLocaleDateString('es-AR')}</span>
+                    </div>
+                    {partido.promedio && (
+                        <div className="promedio-tag">★ {partido.promedio}</div>
                     )}
+                </div>
+                <div className="equipo-side equipo-right">
+                    <span className="equipo-nombre">{partido.equipo_visitante}</span>
+                    {partido.escudo_visitante
+                        ? <img src={partido.escudo_visitante} className="escudo" alt="" />
+                        : <div className="escudo-placeholder">{partido.equipo_visitante?.[0]}</div>
+                    }
                 </div>
             </div>
-            <p className="text-gray-500 text-xs mt-2 text-center">
-                {new Date(partido.fecha).toLocaleDateString('es-AR')}
-            </p>
         </div>
     );
 
+    const tabs = [
+        { id: 'explorar', label: 'Explorar' },
+        { id: 'buscar', label: 'Buscar' },
+        { id: 'mejores', label: '★ Mejores' },
+        { id: 'gente', label: 'Gente' },
+    ];
+
     return (
-        <div className="min-h-screen bg-gray-950 text-white p-6">
-            <div className="max-w-2xl mx-auto">
+        <>
+            <style>{`
+                @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Special+Elite&family=Oswald:wght@400;600;700&display=swap');
 
-                {/* Tabs */}
-                <div className="flex gap-2 mb-6 flex-wrap">
-                    {['explorar', 'buscar', 'mejores', 'gente'].map(v => (
-                        <button
-                            key={v}
-                            onClick={() => { setVista(v); if (v === 'mejores') cargarMejores(); }}
-                            className={`px-4 py-2 rounded-lg font-semibold capitalize ${vista === v ? 'bg-green-700' : 'bg-gray-800 hover:bg-gray-700'}`}
-                        >
-                            {v === 'mejores' ? '⭐ Mejores' : v.charAt(0).toUpperCase() + v.slice(1)}
-                        </button>
-                    ))}
-                </div>
+                :root {
+                    --verde: #2d5a1b;
+                    --verde-claro: #4a8c2a;
+                    --crema: #f5f0e8;
+                    --cafe: #3d2b1f;
+                    --cafe-claro: #6b4c3b;
+                    --dorado: #c9a84c;
+                    --dorado-claro: #e8c96d;
+                    --rojo: #8b1a1a;
+                    --bg: #1a1208;
+                    --bg2: #231a0e;
+                    --linea: rgba(201,168,76,0.2);
+                }
 
-                {/* Vista Buscar */}
-                {vista === 'buscar' && (
-                    <>
-                        <h1 className="text-3xl font-bold mb-2">¿Qué partido viste?</h1>
-                        <p className="text-gray-400 mb-6">Buscá por nombre de equipo</p>
-                        <form onSubmit={buscar} className="flex gap-2 mb-8">
-                            <input
-                                type="text"
-                                placeholder="Ej: Arsenal, Manchester..."
-                                className="flex-1 bg-gray-800 px-4 py-2 rounded-lg outline-none focus:ring-2 focus:ring-green-500"
-                                value={busqueda}
-                                onChange={e => setBusqueda(e.target.value)}
-                            />
+                .home-wrap {
+                    min-height: 100vh;
+                    background-color: var(--bg);
+                    background-image:
+                        repeating-linear-gradient(0deg, transparent, transparent 40px, rgba(201,168,76,0.03) 40px, rgba(201,168,76,0.03) 41px),
+                        repeating-linear-gradient(90deg, transparent, transparent 40px, rgba(201,168,76,0.03) 40px, rgba(201,168,76,0.03) 41px);
+                    padding: 2rem 1rem 4rem;
+                    font-family: 'Oswald', sans-serif;
+                }
+
+                .home-inner {
+                    max-width: 720px;
+                    margin: 0 auto;
+                }
+
+                /* Hero */
+                .hero {
+                    text-align: center;
+                    padding: 2rem 0 2.5rem;
+                    border-bottom: 2px solid var(--linea);
+                    margin-bottom: 2rem;
+                }
+
+                .hero-titulo {
+                    font-family: 'Bebas Neue', sans-serif;
+                    font-size: clamp(3rem, 10vw, 5.5rem);
+                    color: var(--crema);
+                    letter-spacing: 0.08em;
+                    line-height: 1;
+                    text-shadow: 3px 3px 0 var(--cafe), 6px 6px 0 rgba(0,0,0,0.4);
+                }
+
+                .hero-titulo span {
+                    color: var(--dorado);
+                }
+
+                .hero-sub {
+                    font-family: 'Special Elite', cursive;
+                    color: var(--dorado-claro);
+                    font-size: 0.85rem;
+                    letter-spacing: 0.3em;
+                    text-transform: uppercase;
+                    margin-top: 0.5rem;
+                    opacity: 0.8;
+                }
+
+                /* Tabs */
+                .tabs {
+                    display: flex;
+                    gap: 0.5rem;
+                    margin-bottom: 2rem;
+                    flex-wrap: wrap;
+                    border-bottom: 2px solid var(--linea);
+                    padding-bottom: 1rem;
+                }
+
+                .tab-btn {
+                    font-family: 'Bebas Neue', sans-serif;
+                    font-size: 1.1rem;
+                    letter-spacing: 0.1em;
+                    padding: 0.4rem 1.2rem;
+                    border: 2px solid var(--linea);
+                    background: transparent;
+                    color: var(--crema);
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    opacity: 0.6;
+                }
+
+                .tab-btn:hover {
+                    border-color: var(--dorado);
+                    color: var(--dorado);
+                    opacity: 1;
+                }
+
+                .tab-btn.activo {
+                    background: var(--dorado);
+                    color: var(--cafe);
+                    border-color: var(--dorado);
+                    opacity: 1;
+                    font-weight: bold;
+                }
+
+                /* Section title */
+                .section-title {
+                    font-family: 'Bebas Neue', sans-serif;
+                    font-size: 2rem;
+                    color: var(--crema);
+                    letter-spacing: 0.1em;
+                    margin-bottom: 0.25rem;
+                }
+
+                .section-sub {
+                    font-family: 'Special Elite', cursive;
+                    color: var(--dorado-claro);
+                    font-size: 0.78rem;
+                    letter-spacing: 0.2em;
+                    margin-bottom: 1.5rem;
+                    opacity: 0.7;
+                }
+
+                /* Competiciones */
+                .comp-grid {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 0.6rem;
+                    margin-bottom: 1.5rem;
+                }
+
+                .comp-btn {
+                    font-family: 'Bebas Neue', sans-serif;
+                    font-size: 0.95rem;
+                    letter-spacing: 0.12em;
+                    padding: 0.4rem 1rem;
+                    border: 2px solid var(--cafe-claro);
+                    background: var(--bg2);
+                    color: var(--crema);
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+
+                .comp-btn:hover, .comp-btn.activo {
+                    background: var(--verde);
+                    border-color: var(--verde-claro);
+                    color: var(--crema);
+                }
+
+                /* Temporadas */
+                .temp-grid {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 0.4rem;
+                    margin-bottom: 1.5rem;
+                }
+
+                .temp-btn {
+                    font-family: 'Oswald', sans-serif;
+                    font-size: 0.8rem;
+                    letter-spacing: 0.05em;
+                    padding: 0.25rem 0.7rem;
+                    border: 1px solid var(--linea);
+                    background: transparent;
+                    color: rgba(245,240,232,0.6);
+                    cursor: pointer;
+                    transition: all 0.15s;
+                }
+
+                .temp-btn:hover, .temp-btn.activo {
+                    border-color: var(--dorado);
+                    color: var(--dorado);
+                }
+
+                /* Partido card */
+                .partido-card {
+                    background: var(--bg2);
+                    border: 1px solid var(--linea);
+                    border-left: 4px solid var(--verde);
+                    margin-bottom: 0.75rem;
+                    padding: 1rem 1.2rem;
+                    transition: all 0.2s;
+                    position: relative;
+                }
+
+                .partido-card:hover {
+                    border-left-color: var(--dorado);
+                    background: #2a1e0f;
+                    transform: translateX(3px);
+                }
+
+                .partido-inner {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 0.5rem;
+                }
+
+                .equipo-side {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.6rem;
+                    flex: 1;
+                }
+
+                .equipo-right {
+                    justify-content: flex-end;
+                }
+
+                .escudo {
+                    width: 32px;
+                    height: 32px;
+                    object-fit: contain;
+                    filter: drop-shadow(0 1px 3px rgba(0,0,0,0.5));
+                }
+
+                .escudo-placeholder {
+                    width: 32px;
+                    height: 32px;
+                    background: var(--verde);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: 'Bebas Neue', sans-serif;
+                    font-size: 1rem;
+                    color: var(--crema);
+                }
+
+                .equipo-nombre {
+                    font-family: 'Oswald', sans-serif;
+                    font-weight: 600;
+                    font-size: 0.9rem;
+                    color: var(--crema);
+                    letter-spacing: 0.05em;
+                }
+
+                .marcador-centro {
+                    text-align: center;
+                    min-width: 120px;
+                }
+
+                .marcador-score {
+                    font-family: 'Bebas Neue', sans-serif;
+                    font-size: 1.8rem;
+                    color: var(--dorado);
+                    letter-spacing: 0.1em;
+                    line-height: 1;
+                }
+
+                .guion {
+                    color: var(--cafe-claro);
+                    font-size: 1.2rem;
+                }
+
+                .marcador-meta {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.1rem;
+                    margin-top: 0.2rem;
+                }
+
+                .competicion-tag {
+                    font-family: 'Special Elite', cursive;
+                    font-size: 0.65rem;
+                    color: var(--dorado-claro);
+                    letter-spacing: 0.1em;
+                    opacity: 0.8;
+                }
+
+                .fecha-tag {
+                    font-size: 0.65rem;
+                    color: rgba(245,240,232,0.4);
+                    letter-spacing: 0.05em;
+                }
+
+                .promedio-tag {
+                    font-family: 'Bebas Neue', sans-serif;
+                    font-size: 0.8rem;
+                    color: var(--dorado);
+                    margin-top: 0.2rem;
+                    letter-spacing: 0.1em;
+                }
+
+                .rank-badge {
+                    position: absolute;
+                    top: -8px;
+                    left: -4px;
+                    font-family: 'Bebas Neue', sans-serif;
+                    font-size: 0.75rem;
+                    background: var(--dorado);
+                    color: var(--cafe);
+                    padding: 0 0.4rem;
+                    letter-spacing: 0.1em;
+                }
+
+                /* Buscador */
+                .search-form {
+                    display: flex;
+                    gap: 0.5rem;
+                    margin-bottom: 1.5rem;
+                }
+
+                .search-input {
+                    flex: 1;
+                    background: var(--bg2);
+                    border: 2px solid var(--linea);
+                    color: var(--crema);
+                    padding: 0.6rem 1rem;
+                    font-family: 'Oswald', sans-serif;
+                    font-size: 0.95rem;
+                    letter-spacing: 0.05em;
+                    outline: none;
+                    transition: border-color 0.2s;
+                }
+
+                .search-input:focus {
+                    border-color: var(--dorado);
+                }
+
+                .search-input::placeholder {
+                    color: rgba(245,240,232,0.3);
+                }
+
+                .search-btn {
+                    background: var(--verde);
+                    border: 2px solid var(--verde-claro);
+                    color: var(--crema);
+                    padding: 0.6rem 1.4rem;
+                    font-family: 'Bebas Neue', sans-serif;
+                    font-size: 1rem;
+                    letter-spacing: 0.15em;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+
+                .search-btn:hover {
+                    background: var(--verde-claro);
+                }
+
+                /* Empty state */
+                .empty-state {
+                    text-align: center;
+                    padding: 3rem 0;
+                    font-family: 'Special Elite', cursive;
+                    color: rgba(245,240,232,0.3);
+                    font-size: 0.9rem;
+                    letter-spacing: 0.1em;
+                }
+
+                /* Usuario card */
+                .usuario-card {
+                    display: flex;
+                    align-items: center;
+                    gap: 1rem;
+                    background: var(--bg2);
+                    border: 1px solid var(--linea);
+                    padding: 0.8rem 1.2rem;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    margin-bottom: 0.5rem;
+                }
+
+                .usuario-card:hover {
+                    border-color: var(--dorado);
+                    background: #2a1e0f;
+                }
+
+                .usuario-avatar {
+                    width: 40px;
+                    height: 40px;
+                    background: var(--verde);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-family: 'Bebas Neue', sans-serif;
+                    font-size: 1.3rem;
+                    color: var(--crema);
+                    flex-shrink: 0;
+                }
+
+                .usuario-nombre {
+                    font-family: 'Oswald', sans-serif;
+                    font-size: 1rem;
+                    font-weight: 600;
+                    color: var(--crema);
+                    letter-spacing: 0.05em;
+                }
+
+                /* Loading */
+                .loading {
+                    font-family: 'Special Elite', cursive;
+                    color: var(--dorado-claro);
+                    font-size: 0.85rem;
+                    letter-spacing: 0.15em;
+                    padding: 1rem 0;
+                    opacity: 0.7;
+                }
+
+                /* Divisor decorativo */
+                .divisor {
+                    display: flex;
+                    align-items: center;
+                    gap: 1rem;
+                    margin: 1.5rem 0;
+                    opacity: 0.3;
+                }
+                .divisor::before, .divisor::after {
+                    content: '';
+                    flex: 1;
+                    height: 1px;
+                    background: var(--dorado);
+                }
+                .divisor-icon {
+                    color: var(--dorado);
+                    font-size: 0.8rem;
+                }
+            `}</style>
+
+            <div className="home-wrap">
+                <div className="home-inner">
+
+                    {/* Hero */}
+                    <div className="hero">
+                        <div className="hero-titulo">Match<span>boxd</span></div>
+                        <div className="hero-sub">El diario de tus partidos</div>
+                    </div>
+
+                    {/* Tabs */}
+                    <div className="tabs">
+                        {tabs.map(t => (
                             <button
-                                type="submit"
-                                className="bg-green-700 hover:bg-green-600 px-6 py-2 rounded-lg font-semibold"
+                                key={t.id}
+                                className={`tab-btn ${vista === t.id ? 'activo' : ''}`}
+                                onClick={() => { setVista(t.id); if (t.id === 'mejores') cargarMejores(); }}
                             >
-                                {buscando ? 'Buscando...' : 'Buscar'}
+                                {t.label}
                             </button>
-                        </form>
-                        <div className="flex flex-col gap-4">
-                            {resultados.length === 0 && !buscando && (
-                                <p className="text-gray-500 text-center mt-10">Buscá un partido para empezar</p>
-                            )}
-                            {resultados.map(partido => <PartidoCard key={partido.id} partido={partido} />)}
-                        </div>
-                    </>
-                )}
+                        ))}
+                    </div>
 
-                {/* Vista Explorar */}
-                {vista === 'explorar' && (
-                    <>
-                        <h1 className="text-3xl font-bold mb-6">Explorar competiciones</h1>
-                        <div className="flex gap-3 flex-wrap mb-6">
-                            {competiciones.map(comp => (
-                                <button
-                                    key={comp.id}
-                                    onClick={() => seleccionarCompeticion(comp)}
-                                    className={`px-4 py-2 rounded-lg font-semibold ${competicionSeleccionada?.id === comp.id ? 'bg-green-700' : 'bg-gray-800 hover:bg-gray-700'}`}
-                                >
-                                    {comp.nombre}
-                                </button>
-                            ))}
-                        </div>
-                        {temporadas.length > 0 && (
-                            <div className="flex gap-3 flex-wrap mb-6">
-                                {temporadas.map(t => (
+                    {/* Vista Explorar */}
+                    {vista === 'explorar' && (
+                        <>
+                            <div className="section-title">Explorar competiciones</div>
+                            <div className="section-sub">Seleccioná una liga para ver sus partidos</div>
+                            <div className="comp-grid">
+                                {competiciones.map(comp => (
                                     <button
-                                        key={t.temporada}
-                                        onClick={() => seleccionarTemporada(t.temporada)}
-                                        className={`px-3 py-1 rounded-lg text-sm ${temporadaSeleccionada === t.temporada ? 'bg-green-700' : 'bg-gray-800 hover:bg-gray-700'}`}
+                                        key={comp.id}
+                                        className={`comp-btn ${competicionSeleccionada?.id === comp.id ? 'activo' : ''}`}
+                                        onClick={() => seleccionarCompeticion(comp)}
                                     >
-                                        {t.temporada}
+                                        {comp.nombre}
                                     </button>
                                 ))}
                             </div>
-                        )}
-                        {cargandoPartidos && <p className="text-gray-400">Cargando partidos...</p>}
-                        <div className="flex flex-col gap-4">
-                            {partidosComp.map(partido => <PartidoCard key={partido.id} partido={partido} />)}
-                        </div>
-                        {!competicionSeleccionada && (
-                            <p className="text-gray-500 text-center mt-10">Seleccioná una competición para ver los partidos</p>
-                        )}
-                        {competicionSeleccionada && temporadas.length > 0 && !temporadaSeleccionada && (
-                            <p className="text-gray-500 text-center mt-10">Seleccioná una temporada</p>
-                        )}
-                    </>
-                )}
-
-                {/* Vista Mejores */}
-                {vista === 'mejores' && (
-                    <>
-                        <h1 className="text-3xl font-bold mb-2">Mejores partidos</h1>
-                        <p className="text-gray-400 mb-6">Ordenados por calificación promedio</p>
-                        {cargandoMejores && <p className="text-gray-400">Cargando...</p>}
-                        <div className="flex flex-col gap-4">
-                            {mejores.map((partido, i) => (
-                                <div key={partido.id} className="relative">
-                                    <span className="absolute -left-6 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-bold">#{i+1}</span>
-                                    <div onClick={() => navigate(`/partido/${partido.id}`)} className="bg-gray-900 p-4 rounded-xl cursor-pointer hover:bg-gray-800 transition">
-                                        <div className="flex justify-between items-center">
-                                            <div className="flex items-center gap-3 flex-1">
-                                                {partido.escudo_local && <img src={partido.escudo_local} className="w-8 h-8 object-contain" />}
-                                                <span className="font-semibold text-sm">{partido.equipo_local}</span>
-                                            </div>
-                                            <div className="text-center px-4">
-                                                <span className="text-xl font-bold text-green-400">{partido.goles_local} - {partido.goles_visitante}</span>
-                                                <p className="text-gray-400 text-xs">{partido.competicion}</p>
-                                            </div>
-                                            <div className="flex items-center gap-3 flex-1 justify-end">
-                                                <span className="font-semibold text-sm">{partido.equipo_visitante}</span>
-                                                {partido.escudo_visitante && <img src={partido.escudo_visitante} className="w-8 h-8 object-contain" />}
-                                            </div>
-                                        </div>
-                                        <div className="flex justify-between mt-2">
-                                            <p className="text-gray-500 text-xs">{new Date(partido.fecha).toLocaleDateString('es-AR')}</p>
-                                            <p className="text-yellow-400 text-xs font-semibold">⭐ {partido.promedio} ({partido.total_resenas} reseñas)</p>
-                                        </div>
+                            {temporadas.length > 0 && (
+                                <>
+                                    <div className="divisor"><span className="divisor-icon">◆</span></div>
+                                    <div className="temp-grid">
+                                        {temporadas.map(t => (
+                                            <button
+                                                key={t.temporada}
+                                                className={`temp-btn ${temporadaSeleccionada === t.temporada ? 'activo' : ''}`}
+                                                onClick={() => seleccionarTemporada(t.temporada)}
+                                            >
+                                                {t.temporada}
+                                            </button>
+                                        ))}
                                     </div>
-                                </div>
-                            ))}
-                            {mejores.length === 0 && !cargandoMejores && (
-                                <p className="text-gray-500 text-center mt-10">Todavía no hay reseñas</p>
+                                </>
                             )}
-                        </div>
-                    </>
-                )}
+                            {cargandoPartidos && <div className="loading">Cargando partidos...</div>}
+                            <div>
+                                {partidosComp.map(p => <PartidoCard key={p.id} partido={p} />)}
+                            </div>
+                            {!competicionSeleccionada && (
+                                <div className="empty-state">— Seleccioná una competición —</div>
+                            )}
+                            {competicionSeleccionada && temporadas.length > 0 && !temporadaSeleccionada && (
+                                <div className="empty-state">— Seleccioná una temporada —</div>
+                            )}
+                        </>
+                    )}
 
-                {/* Vista Gente */}
-                {vista === 'gente' && (
-                    <>
-                        <h1 className="text-3xl font-bold mb-2">Buscar gente</h1>
-                        <p className="text-gray-400 mb-6">Buscá por nombre de usuario</p>
-                        <form onSubmit={buscarUsuarios} className="flex gap-2 mb-8">
-                            <input
-                                type="text"
-                                placeholder="Ej: Lali, Juan..."
-                                className="flex-1 bg-gray-800 px-4 py-2 rounded-lg outline-none focus:ring-2 focus:ring-green-500"
-                                value={busquedaUsuario}
-                                onChange={e => setBusquedaUsuario(e.target.value)}
-                            />
-                            <button
-                                type="submit"
-                                className="bg-green-700 hover:bg-green-600 px-6 py-2 rounded-lg font-semibold"
-                            >
-                                {buscandoUsuario ? 'Buscando...' : 'Buscar'}
-                            </button>
-                        </form>
-                        <div className="flex flex-col gap-3">
-                            {usuarios.map(u => (
-                                <div
-                                    key={u.id}
-                                    onClick={() => navigate(`/perfil/${u.username}`)}
-                                    className="bg-gray-900 p-4 rounded-xl cursor-pointer hover:bg-gray-800 transition flex items-center gap-4"
-                                >
-                                    <div className="w-10 h-10 rounded-full bg-green-700 flex items-center justify-center font-bold text-lg">
-                                        {u.username[0].toUpperCase()}
+                    {/* Vista Buscar */}
+                    {vista === 'buscar' && (
+                        <>
+                            <div className="section-title">Buscar partido</div>
+                            <div className="section-sub">Por nombre de equipo</div>
+                            <form onSubmit={buscar} className="search-form">
+                                <input
+                                    type="text"
+                                    placeholder="Ej: Arsenal, River, Bayern..."
+                                    className="search-input"
+                                    value={busqueda}
+                                    onChange={e => setBusqueda(e.target.value)}
+                                />
+                                <button type="submit" className="search-btn">
+                                    {buscando ? '...' : 'Buscar'}
+                                </button>
+                            </form>
+                            <div>
+                                {resultados.map(p => <PartidoCard key={p.id} partido={p} />)}
+                                {resultados.length === 0 && !buscando && (
+                                    <div className="empty-state">— Ingresá un equipo para buscar —</div>
+                                )}
+                            </div>
+                        </>
+                    )}
+
+                    {/* Vista Mejores */}
+                    {vista === 'mejores' && (
+                        <>
+                            <div className="section-title">Mejores partidos</div>
+                            <div className="section-sub">Ordenados por calificación promedio</div>
+                            {cargandoMejores && <div className="loading">Cargando...</div>}
+                            <div>
+                                {mejores.map((p, i) => <PartidoCard key={p.id} partido={p} rank={i + 1} />)}
+                                {mejores.length === 0 && !cargandoMejores && (
+                                    <div className="empty-state">— Todavía no hay reseñas —</div>
+                                )}
+                            </div>
+                        </>
+                    )}
+
+                    {/* Vista Gente */}
+                    {vista === 'gente' && (
+                        <>
+                            <div className="section-title">Buscar gente</div>
+                            <div className="section-sub">Por nombre de usuario</div>
+                            <form onSubmit={buscarUsuarios} className="search-form">
+                                <input
+                                    type="text"
+                                    placeholder="Ej: Lali, Juan..."
+                                    className="search-input"
+                                    value={busquedaUsuario}
+                                    onChange={e => setBusquedaUsuario(e.target.value)}
+                                />
+                                <button type="submit" className="search-btn">
+                                    {buscandoUsuario ? '...' : 'Buscar'}
+                                </button>
+                            </form>
+                            <div>
+                                {usuarios.map(u => (
+                                    <div
+                                        key={u.id}
+                                        className="usuario-card"
+                                        onClick={() => navigate(`/perfil/${u.username}`)}
+                                    >
+                                        <div className="usuario-avatar">{u.username[0].toUpperCase()}</div>
+                                        <span className="usuario-nombre">{u.username}</span>
                                     </div>
-                                    <span className="font-semibold">{u.username}</span>
-                                </div>
-                            ))}
-                            {usuarios.length === 0 && !buscandoUsuario && busquedaUsuario && (
-                                <p className="text-gray-500 text-center mt-10">Sin resultados</p>
-                            )}
-                            {!busquedaUsuario && (
-                                <p className="text-gray-500 text-center mt-10">Buscá un usuario para empezar</p>
-                            )}
-                        </div>
-                    </>
-                )}
+                                ))}
+                                {usuarios.length === 0 && !buscandoUsuario && busquedaUsuario && (
+                                    <div className="empty-state">— Sin resultados —</div>
+                                )}
+                                {!busquedaUsuario && (
+                                    <div className="empty-state">— Buscá un usuario para empezar —</div>
+                                )}
+                            </div>
+                        </>
+                    )}
 
+                </div>
             </div>
-        </div>
+        </>
     );
 };
 
